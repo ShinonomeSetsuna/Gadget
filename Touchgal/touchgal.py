@@ -163,7 +163,7 @@ def dir_download(key: str) -> list[str]:
 
 
 def file_download(key: str) -> str:
-    # key = quote(key)
+    key = key.split("=/")[0] + "=/" + quote(key.split("=/")[1])
     """对文件进行下载
 
     Args:
