@@ -105,7 +105,7 @@ class DownloadDirResponse:
     msg: str
 
 
-def gal_query(keyword: str) -> QueryResponse:
+def gal_query(keyword: str, page: int = 1) -> QueryResponse:
     keyword = quote(keyword)  # 有些中文不支持……
     """在TouchGal进行资源搜索
 
@@ -115,7 +115,7 @@ def gal_query(keyword: str) -> QueryResponse:
     Returns:
         QueryResponse: 查询结果
     """
-    URL = f"https://pan.touchgal.net/api/v3/share/search?page=1&order_by=created_at&order=DESC&keywords={keyword}"
+    URL = f"https://pan.touchgal.net/api/v3/share/search?page={page}&order_by=created_at&order=DESC&keywords={keyword}"
     header = {
         "Accept": "application/json, text/plain, */*",
         "Cookie": COOKIE,
@@ -155,7 +155,7 @@ def dir_download(key: str) -> list[str]:
     )
     if rd.code == 0:
         return [
-            file_download(f"{item.key}?path={item.path}{item.name}")
+            file_download(f"{item.key}?path={quote(item.path+item.name)}")
             for item in rd.data.objects
         ]
     else:
@@ -163,7 +163,6 @@ def dir_download(key: str) -> list[str]:
 
 
 def file_download(key: str) -> str:
-    key = quote(key, safe="?=/")
     """对文件进行下载
 
     Args:
@@ -209,20 +208,29 @@ def gal_download(r: QueryResponseDataItem) -> list[str]:
 # Example
 if __name__ == "__main__":
     keyword = input("请输入搜索内容:")
+    page = 1
 
-    r = gal_query(
-        keyword
-    )  # 返回结果可以看一下上面的class, 如果不知道可以根据自动补全去猜（x
-
-    if r.code == 0:
-        print(f"关键字{keyword}的查询结果(共{r.data.total}个):")
-        for i, item in enumerate(r.data.items):
-            print(f"{i + 1}、{item.source.name}")
-    else:
-        print(f"出现错误：{r.msg}")
-
-    if r.data.total != 0:
-        # 这里是 QueryResponse.data.items:QueryResponseDataItem
-        # 修改后面的序号就可以
-        for link in gal_download(r.data.items[int(input("选择链接:")) - 1]):
-            print(link)
+    while (r := gal_query(keyword, page)).data.items:
+        if r.code == 0:
+            print(
+                f"关键字{keyword}的查询结果(共{r.data.total}个，第{page}/{((r.data.total + 17) // 18)}页):"
+            )
+            for i, item in enumerate(r.data.items):
+                print(f"{i + 1}、{item.source.name}")
+        else:
+            print(f"出现错误：{r.msg}")
+            exit(-1)
+        try:
+            if (
+                choose := int(input("选择链接(输入0进入下一页，输入-1返回上一页):"))
+            ) > 0:
+                # 这里是 QueryResponse.data.items:QueryResponseDataItem
+                # 修改后面的序号就可以
+                for link in gal_download(r.data.items[int() - 1]):
+                    print(link)
+            elif choose == -1:
+                page = page - 1 if page > 1 else 1
+            elif choose == 0:
+                page += 1
+        except ValueError:
+            print("请输入正确的数字！")
