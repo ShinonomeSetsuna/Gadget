@@ -226,7 +226,7 @@ if __name__ == "__main__":
             ) > 0:
                 # 这里是 QueryResponse.data.items:QueryResponseDataItem
                 # 修改后面的序号就可以
-                for link in gal_download(r.data.items[int() - 1]):
+                for link in gal_download(r.data.items[choose - 1]):
                     print(link)
                 break
             elif choose == -1:
