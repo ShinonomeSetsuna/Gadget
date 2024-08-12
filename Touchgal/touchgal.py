@@ -228,6 +228,7 @@ if __name__ == "__main__":
                 # 修改后面的序号就可以
                 for link in gal_download(r.data.items[int() - 1]):
                     print(link)
+                break
             elif choose == -1:
                 page = page - 1 if page > 1 else 1
             elif choose == 0:
